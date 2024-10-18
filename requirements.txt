@@ -1,3 +1,4 @@
+pip
 gTTS==2.5.3
 ipython==8.12.3
 langchain==0.3.4
