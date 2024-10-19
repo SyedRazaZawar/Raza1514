@@ -567,11 +567,11 @@ elif chatbot_functionality == "Youtube Video summarizer":
     # Function to fetch alternative thumbnails
     def try_alternative_thumbnail(video_id):
         alt_urls = [
-            f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",  
-            f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg",      
-            f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",      
-            f"https://img.youtube.com/vi/{video_id}/sddefault.jpg",      
-            f"https://img.youtube.com/vi/{video_id}/default.jpg"         
+        f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",  
+        f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg",      
+        f"https://img.youtube.com/vi/{video_id}/mqdefault.jpg",      
+        f"https://img.youtube.com/vi/{video_id}/sddefault.jpg",      
+        f"https://img.youtube.com/vi/{video_id}/default.jpg"         
         ]
         for url in alt_urls:
             response = requests.get(url)
@@ -603,7 +603,7 @@ elif chatbot_functionality == "Youtube Video summarizer":
             languages = {transcript.language_code: transcript.language for transcript in transcript_list}
             return languages
         except (NoTranscriptFound, TranscriptsDisabled):
-            st.warning("No transcripts available for this video.")
+            st.warning("I'm generating captions for the video please click again on fetch video info button.")
             return {}
 
     # Function to fetch captions
@@ -678,7 +678,7 @@ elif chatbot_functionality == "Youtube Video summarizer":
                         else:
                             st.error("Failed to fetch captions in the selected language.")
                     else:
-                        st.warning("No available captions for this video.")
+                        st.warning("Click again on fetch video info button. I'm loading your captions it will load slowly because large traffic.Thanks for your cooperation....")
                 else:
                     st.error("Failed to fetch video data. Check the provided URL.")
     
