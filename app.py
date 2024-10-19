@@ -534,6 +534,7 @@ elif chatbot_functionality == "Youtube Video summarizer":
 
 
 
+
     import streamlit as st
     from pytube import YouTube
     from PIL import Image
@@ -603,7 +604,7 @@ elif chatbot_functionality == "Youtube Video summarizer":
             languages = {transcript.language_code: transcript.language for transcript in transcript_list}
             return languages
         except (NoTranscriptFound, TranscriptsDisabled):
-            st.warning("I'm generating captions for the video please click again on fetch video info button.")
+            st.warning("I'm generating captions for the video please click again on fetch video info button......")
             return {}
 
     # Function to fetch captions
