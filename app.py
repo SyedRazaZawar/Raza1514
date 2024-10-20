@@ -534,7 +534,6 @@ elif chatbot_functionality == "Youtube Video summarizer":
 
 
 
-
     import streamlit as st
     from pytube import YouTube
     from PIL import Image
@@ -542,17 +541,12 @@ elif chatbot_functionality == "Youtube Video summarizer":
     from io import BytesIO
     from youtube_transcript_api import YouTubeTranscriptApi, NoTranscriptFound, TranscriptsDisabled
     from youtube_transcript_api.formatters import SRTFormatter
+    import time  # To add a delay between retries
 
     # API URLs and headers for Hugging Face
     API_URL_SUMMARIZATION = "https://api-inference.huggingface.co/models/sshleifer/distilbart-cnn-12-6"
     API_URL_TTS = "https://api-inference.huggingface.co/models/espnet/kan-bayashi_ljspeech_vits"
     headers = {"Authorization": "Bearer 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"}  # Replace with your actual Hugging Face API Key
-
-    # Streamlit webpage configuration
-    #st.set_page_config(page_title="YouTube Caption, Summarizer, and TTS", layout="wide")
-
-    # Warning message on top
-
 
     # Function to fetch video info and thumbnail
     def fetch_video_info(url):
@@ -598,13 +592,17 @@ elif chatbot_functionality == "Youtube Video summarizer":
             st.error("Failed to display thumbnail: " + str(e))
 
     # Function to fetch available caption languages
-    def fetch_available_languages(video_id):
+    def fetch_available_languages(video_id, selected_language_code):
         try:
             transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
             languages = {transcript.language_code: transcript.language for transcript in transcript_list}
             return languages
         except (NoTranscriptFound, TranscriptsDisabled):
-            st.warning("I'm generating captions for the video please click again on fetch video info button......")
+            # Attempt retry for fetching captions if no transcript is found
+            captions = retry_until_success(video_id, selected_language_code)
+            if captions:
+                st.session_state['captions'] = captions
+                return captions
             return {}
 
     # Function to fetch captions
@@ -616,8 +614,25 @@ elif chatbot_functionality == "Youtube Video summarizer":
             srt = formatter.format_transcript(transcript.fetch())
             return srt
         except Exception as e:
-            st.warning(f"No captions available for this video in {language_code}. {str(e)}")
-            return ""
+            return ""  # If no captions available, return an empty string
+
+    # Function to automatically fetch captions until successful
+    def retry_until_success(video_id, selected_language_code):
+        retry_count = 0
+        max_retries = 30  # Limit the number of retries
+        wait_time = 2  # Wait time between retries in seconds
+
+        while retry_count < max_retries:
+            captions = fetch_captions(video_id, selected_language_code)
+            if captions:
+                return captions
+            else:
+                st.warning(f"Attempt {retry_count+1}: Captions not available yet. Retrying in {wait_time} seconds...")
+                retry_count += 1
+                time.sleep(wait_time)  # Wait for a few seconds before retrying
+
+        st.error("Failed to fetch captions after multiple attempts.")
+        return ""
 
     # Function to call Hugging Face Summarization API
     def query_summarization_api(text, min_length, max_length):
@@ -653,8 +668,6 @@ elif chatbot_functionality == "Youtube Video summarizer":
         # Get URL input
         url = st.text_input("Enter YouTube video URL", "")
 
-
-
         # Fetch Video Info Button
         if st.button("Fetch Video Info"):
             if url:
@@ -664,22 +677,25 @@ elif chatbot_functionality == "Youtube Video summarizer":
                     st.session_state['video_id'] = video_id
                
                     # Fetch available languages
-                    available_languages = fetch_available_languages(video_id)
-                    if available_languages:
+                    available_languages = fetch_available_languages(video_id, 'en')
+                    if isinstance(available_languages, dict) and available_languages:
                         st.session_state['available_languages'] = available_languages
                         language_options = list(available_languages.values())
                         selected_language = st.selectbox("Select Caption Language", language_options)
                         selected_language_code = list(available_languages.keys())[language_options.index(selected_language)]
 
-                        # Fetch and store captions in session state
-                        captions = fetch_captions(video_id, selected_language_code)
+                        # Automatically retry fetching transcripts until successful
+                        captions = retry_until_success(video_id, selected_language_code)
                         if captions:
                             st.session_state['captions'] = captions
                             st.session_state['summary'] = ""  # Reset summary when new captions are fetched
+
                         else:
-                            st.error("Failed to fetch captions in the selected language.")
+                            st.warning("Click on fetch video info button again")
+                        
+                    
                     else:
-                        st.warning("Click again on fetch video info button. I'm loading your captions it will load slowly because large traffic.Thanks for your cooperation....")
+                        st.warning("I'm trying my services best. Thanks for your cooperation !!!")
                 else:
                     st.error("Failed to fetch video data. Check the provided URL.")
     
@@ -735,8 +751,6 @@ elif chatbot_functionality == "Youtube Video summarizer":
 
     if __name__ == "__main__":
         main()
-
-
 
 
 
